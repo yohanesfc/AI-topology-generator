@@ -120,24 +120,31 @@ pm2 save
 ---
 
 ## 📁 Project Structure
+
+```
+AI-topology-generator/
+│
 ├── app/
-│   ├── page.tsx                    # Main UI
-│   ├── globals.css                 # Tailwind + React Flow theme
+│   ├── page.tsx                     # Main UI
+│   ├── globals.css                  # Tailwind + React Flow theme
 │   └── api/
-│       ├── generate-topology/      # Groq LLM → JSON topology
-│       ├── generate-config/        # Groq LLM → CLI configs
-│       ├── network-tools/          # Ping / Traceroute
-│       ├── topologies/             # Save / Load topologies
-│       └── semaphore/              # Ansible Semaphore integration
+│       ├── generate-topology/       # Groq LLM -> JSON topology
+│       ├── generate-config/         # Groq LLM -> CLI configs
+│       ├── network-tools/           # Ping / Traceroute
+│       ├── topologies/              # Save / Load topologies
+│       └── semaphore/               # Ansible Semaphore integration
+│
 ├── components/
-│   ├── TopologyCanvas.tsx          # Dynamic import wrapper
-│   ├── TopologyCanvasInner.tsx     # React Flow canvas + layout
-│   └── SshTerminal.tsx             # SSH terminal component
+│   ├── TopologyCanvas.tsx           # Dynamic import wrapper
+│   ├── TopologyCanvasInner.tsx      # React Flow canvas + layout
+│   └── SshTerminal.tsx              # SSH terminal component
+│
 ├── lib/
-│   └── schema.ts                   # Zod topology schema
-├── ssh-server.js                   # WebSocket SSH server
-└── next.config.js                  # Security headers config
----
+│   └── schema.ts                    # Zod topology schema
+│
+├── ssh-server.js                    # WebSocket SSH server (port 7501)
+└── next.config.js                   # Security headers config
+```
 
 ## 🔒 Security
 
