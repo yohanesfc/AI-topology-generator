@@ -1,5 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
+import type { VulnData } from './AttackSimulator';
+
 const TopologyCanvasInner = dynamic(
   () => import('./TopologyCanvasInner'),
   { ssr: false, loading: () => (
@@ -8,6 +10,47 @@ const TopologyCanvasInner = dynamic(
     </div>
   )}
 );
-export default function TopologyCanvas({ data, onNodeSelect }: { data: any; onNodeSelect?: (node: any) => void }) {
-  return <TopologyCanvasInner data={data} onNodeSelect={onNodeSelect} />;
+
+interface TopologyCanvasProps {
+  data: any;
+  onNodeSelect?: (node: any) => void;
+  simMode?: boolean;
+  vulnerabilities?: Record<string, VulnData>;
+  attackPath?: string[];
+  attackerNodeId?: string | null;
+  targetNodeId?: string | null;
+  onSetAttacker?: (id: string) => void;
+  onSetTarget?: (id: string) => void;
+  nodeNames?: Record<string, string>;
+  onRenameNode?: (id: string, newName: string) => void;
+}
+
+export default function TopologyCanvas({
+  data,
+  onNodeSelect,
+  simMode,
+  vulnerabilities,
+  attackPath,
+  attackerNodeId,
+  targetNodeId,
+  onSetAttacker,
+  onSetTarget,
+  nodeNames,
+  onRenameNode,
+}: TopologyCanvasProps) {
+  return (
+    <TopologyCanvasInner
+      data={data}
+      onNodeSelect={onNodeSelect}
+      simMode={simMode}
+      vulnerabilities={vulnerabilities}
+      attackPath={attackPath}
+      attackerNodeId={attackerNodeId}
+      targetNodeId={targetNodeId}
+      onSetAttacker={onSetAttacker}
+      onSetTarget={onSetTarget}
+      nodeNames={nodeNames}
+      onRenameNode={onRenameNode}
+    />
+  );
 }

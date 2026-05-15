@@ -47,3 +47,87 @@
 nextjs-portal {
   display: none !important;
 }
+
+/* ─── Attack Simulator Animations ─────────────────────────────────── */
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes dash-flow {
+  to { stroke-dashoffset: -24; }
+}
+
+@keyframes glow-critical {
+  0%, 100% { box-shadow: 0 0 12px 3px #ef444488, 0 0 24px 6px #ef444433; }
+  50% { box-shadow: 0 0 22px 8px #ef4444cc, 0 0 40px 12px #ef444455; }
+}
+
+@keyframes glow-high {
+  0%, 100% { box-shadow: 0 0 10px 3px #f9731688, 0 0 20px 5px #f9731633; }
+  50% { box-shadow: 0 0 18px 6px #f97316cc, 0 0 32px 10px #f9731655; }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.attack-node-critical {
+  animation: glow-critical 1.2s ease-in-out infinite;
+}
+
+.attack-node-high {
+  animation: glow-high 1.5s ease-in-out infinite;
+}
+
+/* React Flow attack edge SVG override */
+.attack-edge-path {
+  stroke-dasharray: 8 4;
+  animation: dash-flow 0.4s linear infinite, pulse-red 0.8s ease-in-out infinite;
+}
+
+/* Context menu */
+.attack-context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #0f172a;
+  border: 1px solid #1e3a5f;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.15);
+  padding: 6px;
+  min-width: 190px;
+  backdrop-filter: blur(8px);
+}
+
+.attack-context-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #e2e8f0;
+  text-align: left;
+}
+
+.attack-context-menu button:hover {
+  background: #1e3a5f;
+}
+
+/* Risk badge pulse */
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.risk-badge-critical {
+  animation: badge-pulse 1s ease-in-out infinite;
+}
+

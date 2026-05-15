@@ -10,6 +10,13 @@ A **Generative AI-powered** web application for designing network topologies fro
 
 ## ✨ Features
 
+### 🛡️ Digital Twin for Security (Attack Simulator)
+- Simulate cyber attacks and visualize attack paths on the network topology
+- Directional attack path visualization (Attacker → Target)
+- Set attacker origin and target destination via canvas context menu
+- Node styling and glow effects reflect risk severity (Critical, High, Medium, Low)
+- Identify vulnerabilities and potential lateral movement paths
+
 ### 🧠 AI Topology Generation
 - Describe your network in plain text (supports Bahasa Indonesia & English)
 - Two generation modes:

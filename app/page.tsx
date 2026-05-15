@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Share2, Play, CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react';
+import { Share2, CheckCircle, XCircle, Clock, RefreshCw, Shield, Zap } from 'lucide-react';
 import TopologyCanvas from '@/components/TopologyCanvas';
 import dynamic from 'next/dynamic';
+import AttackSimulator from '@/components/AttackSimulator';
+import type { VulnData, AttackResult, RemediationResult } from '@/components/AttackSimulator';
 const SshTerminal = dynamic(() => import('@/components/SshTerminal'), { ssr: false });
 
 interface Template {
@@ -45,6 +47,18 @@ export default function NetworkAutomationPage() {
   const [topologyMode, setTopologyMode] = useState<string>('Structured');
   const [savedTopologies, setSavedTopologies] = useState<any[]>([]);
   const [showSaved, setShowSaved] = useState(false);
+
+  // ── Attack Simulator state ──────────────────────────────────────
+  const [appMode, setAppMode] = useState<'design' | 'simulate'>('design');
+  const [vulnerabilities, setVulnerabilities] = useState<Record<string, VulnData>>({});
+  const [attackerNodeId, setAttackerNodeId] = useState<string | null>(null);
+  const [targetNodeId, setTargetNodeId] = useState<string | null>(null);
+  const [attackResult, setAttackResult] = useState<AttackResult | null>(null);
+  const [remediationResult, setRemediationResult] = useState<RemediationResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [isRemediating, setIsRemediating] = useState(false);
+  const [simError, setSimError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/topologies', { headers: { 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' } })
@@ -206,10 +220,78 @@ export default function NetworkAutomationPage() {
     return <Clock size={12} className="text-slate-500 flex-shrink-0" />;
   };
 
+  // ── Attack Simulator handlers ────────────────────────────────────
+  const handleAnalyze = async () => {
+    if (!object?.devices?.length) return;
+    setIsAnalyzing(true);
+    try {
+      const res = await fetch('/api/analyze-attack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' },
+        body: JSON.stringify({ topology: object }),
+      });
+      const data = await res.json();
+      setVulnerabilities(data.vulnerabilities || {});
+    } catch (e: any) {
+      console.error('analyze-attack error', e);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleSimulate = async () => {
+    if (!object || !attackerNodeId || !targetNodeId) return;
+    setIsSimulating(true);
+    setAttackResult(null);
+    setSimError(null);
+    try {
+      const res = await fetch('/api/simulate-path', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' },
+        body: JSON.stringify({ topology: object, attackerNodeId, targetNodeId, vulnerabilities }),
+      });
+      if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAttackResult(data);
+    } catch (e: any) {
+      console.error('simulate-path error', e);
+      setSimError(e.message ?? 'Simulation failed');
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+
+  const handleRemediate = async () => {
+    if (!attackResult) return;
+    setIsRemediating(true);
+    try {
+      const res = await fetch('/api/remediate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' },
+        body: JSON.stringify({ attackPath: attackResult.attackPath, steps: attackResult.steps, topology: object, vulnerabilities }),
+      });
+      const data = await res.json();
+      setRemediationResult(data);
+    } catch (e: any) {
+      console.error('remediate error', e);
+    } finally {
+      setIsRemediating(false);
+    }
+  };
+
+  const handleClearAttack = () => {
+    setAttackResult(null);
+    setRemediationResult(null);
+    setAttackerNodeId(null);
+    setTargetNodeId(null);
+  };
+
   return (
     <div className="p-4 bg-slate-950 min-h-screen text-slate-200">
       <div className="w-full">
-        <header className="mb-4 flex justify-between items-end">
+        <header className="mb-4 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
               <Share2 className="text-blue-500" /> Network Automation
@@ -217,6 +299,29 @@ export default function NetworkAutomationPage() {
             <p className="text-slate-400">Generative AI for Network Architecture (Max 20 Devices)</p>
           </div>
 
+          {/* Mode Toggle */}
+          <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-700 rounded-xl">
+            <button
+              onClick={() => setAppMode('design')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                appMode === 'design'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Share2 size={14} /> Design
+            </button>
+            <button
+              onClick={() => setAppMode('simulate')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                appMode === 'simulate'
+                  ? 'bg-red-700 text-white shadow-lg shadow-red-500/30'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Zap size={14} /> Simulate
+            </button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 overflow-visible" style={{ minHeight: 'calc(100vh - 120px)' }}>
@@ -232,6 +337,7 @@ export default function NetworkAutomationPage() {
               onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleSubmit(); }}
             />
 
+            {appMode !== 'simulate' && (
             <div className="flex gap-1 flex-shrink-0">
               {['Structured', 'Chain of Thought'].map(m => (
                 <button key={m} onClick={() => setTopologyMode(m)}
@@ -240,6 +346,7 @@ export default function NetworkAutomationPage() {
                 </button>
               ))}
             </div>
+            )}
             <button
               onClick={handleSubmit}
               disabled={isLoading}
@@ -254,7 +361,7 @@ export default function NetworkAutomationPage() {
               </div>
             )}
 
-            {object?.topologyName && (
+            {appMode === 'design' && object?.topologyName && (
               <div className="p-3 bg-slate-900 rounded-lg border border-blue-500/30 flex-shrink-0">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="text-blue-400 text-xs font-bold uppercase tracking-wider">Current Project</h3>
@@ -298,8 +405,10 @@ export default function NetworkAutomationPage() {
               </div>
             )}
 
-            {/* Generate Config Button */}
-            {object?.devices?.length > 0 && (
+            {/* Simulate Mode left panel intentionally empty or hidden. Config & Deploy are hidden. */}
+
+            {/* Generate Config Button — Design mode only */}
+            {appMode === 'design' && object?.devices?.length > 0 && (
               <div className="p-3 bg-slate-900 rounded-lg border border-purple-500/30 flex-shrink-0 space-y-2">
                 <h3 className="text-purple-400 text-xs font-bold uppercase tracking-wider">⚙️ Generate Config</h3>
                 <select
@@ -327,8 +436,8 @@ export default function NetworkAutomationPage() {
               </div>
             )}
 
-            {/* Deploy Panel */}
-            {object?.devices?.length > 0 && (
+            {/* Deploy Panel — Design mode only */}
+            {appMode === 'design' && object?.devices?.length > 0 && (
               <div className="p-3 bg-slate-900 rounded-lg border border-green-500/30 flex-shrink-0 space-y-2">
                 <h3 className="text-green-400 text-xs font-bold uppercase tracking-wider">
                   🚀 Deploy to Ansible
@@ -364,65 +473,95 @@ export default function NetworkAutomationPage() {
 
           </div>
 
-
-          {/* Canvas + Action Panel */}
+          {/* Canvas — col-span-3, full height in simulate, with bottom panel in design */}
           <div className="lg:col-span-3 flex flex-col gap-2" style={{ height: 'calc(100vh - 140px)' }}>
-            {/* Canvas - fills remaining space */}
+
+            {/* Canvas — fills all remaining space */}
             <div className="flex-1 min-h-0">
-              <TopologyCanvas data={object} onNodeSelect={handleNodeSelect} />
+              <TopologyCanvas
+                data={object}
+                onNodeSelect={handleNodeSelect}
+                simMode={appMode === 'simulate'}
+                vulnerabilities={vulnerabilities}
+                attackPath={attackResult?.attackPath ?? []}
+                attackerNodeId={attackerNodeId}
+                targetNodeId={targetNodeId}
+                onSetAttacker={setAttackerNodeId}
+                onSetTarget={setTargetNodeId}
+                nodeNames={nodeNames}
+                onRenameNode={(id, name) => setNodeNames(prev => ({ ...prev, [id]: name }))}
+              />
             </div>
 
-            {/* Bottom Panel - Action + Config side by side */}
-            <div className="flex gap-2 flex-shrink-0" style={{ height: '220px' }}>
-              {/* Node Action Panel */}
-              <div className="flex-1 bg-slate-900 rounded-xl border border-slate-700 p-3 flex flex-col gap-2 overflow-auto">
-                {activeNode ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-white font-bold text-sm">{nodeNames[activeNode.id] ?? activeNode.data?.rawName ?? activeNode.id}</span>
-                        <span className="text-slate-500 text-xs ml-2">{activeNode.data?.ipAddress ?? 'No IP'}</span>
+            {/* Bottom Panel — Action (design) or Simulator (simulate) */}
+            <div className="flex-shrink-0" style={{ height: appMode === 'simulate' ? '320px' : '220px' }}>
+              {appMode === 'simulate' ? (
+                /* ── Attack Simulator Panel ── */
+                <div className="h-full bg-slate-900 rounded-xl border border-red-500/20 p-3 overflow-auto">
+                  <AttackSimulator
+                    topology={object}
+                    vulnerabilities={vulnerabilities}
+                    attackerNodeId={attackerNodeId}
+                    targetNodeId={targetNodeId}
+                    attackResult={attackResult}
+                    remediationResult={remediationResult}
+                    isAnalyzing={isAnalyzing}
+                    isSimulating={isSimulating}
+                    isRemediating={isRemediating}
+                    simError={simError}
+                    onAnalyze={handleAnalyze}
+                    onSimulate={handleSimulate}
+                    onRemediate={handleRemediate}
+                    onClearAttack={handleClearAttack}
+                    onSetAttacker={setAttackerNodeId}
+                    onSetTarget={setTargetNodeId}
+                  />
+                </div>
+              ) : (
+                /* ── Compact Node Action Panel (Design Mode) ── */
+                <div className="h-full bg-slate-900 rounded-xl border border-slate-700 p-2.5 flex flex-col gap-1.5 overflow-auto">
+                  {activeNode ? (
+                    <>
+                      <div className="flex items-center justify-between flex-shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-white font-bold text-xs truncate">{nodeNames[activeNode.id] ?? activeNode.data?.rawName ?? activeNode.id}</span>
+                          <span className="text-slate-500 text-[10px] flex-shrink-0">{activeNode.data?.ipAddress ?? 'No IP'}</span>
+                        </div>
+                        <button onClick={() => { setActiveNode(null); setPingOutput(''); }}
+                          className="text-slate-500 hover:text-white text-xs flex-shrink-0 ml-2">✕</button>
                       </div>
-                      <button onClick={() => { setActiveNode(null); setPingOutput(''); }}
-                        className="text-slate-500 hover:text-white text-xs">✕</button>
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        value={nodeRenameValue}
-                        onChange={e => setNodeRenameValue(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter' && nodeRenameValue.trim()) { setNodeNames(prev => ({ ...prev, [activeNode.id]: nodeRenameValue.trim() })); }}}
-                        placeholder="Rename..."
-                        className="flex-1 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-                      />
-                      <button onClick={() => nodeRenameValue.trim() && setNodeNames(prev => ({ ...prev, [activeNode.id]: nodeRenameValue.trim() }))}
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs text-white transition-colors">✏️</button>
-                      <button
-                        onClick={() => activeNode.data?.ipAddress && handlePing(activeNode.data.ipAddress)}
-                        disabled={pingRunning}
-                        className="px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-40 rounded text-xs text-white font-semibold transition-colors">
-                        {pingRunning ? '⏳' : '🏓 Ping'}
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => activeNode.data?.ipAddress && setSshTarget({ host: activeNode.data.ipAddress, user: 'admin' })}
-                      disabled={!activeNode.data?.ipAddress}
-                      className="w-full py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 rounded text-xs text-white font-bold transition-colors">
-                      🔐 SSH Terminal
-                    </button>
-                    {pingOutput && (
-                      <pre className="flex-1 bg-slate-950 rounded p-2 text-xs text-green-400 font-mono overflow-auto whitespace-pre-wrap">
-                        {pingOutput}
-                      </pre>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-slate-600 text-xs">
-                    Click a node to see actions
-                  </div>
-                )}
-              </div>
-
-{/* Config panel moved to modal */}
+                      <div className="flex flex-col gap-1.5 flex-shrink-0">
+                        <div className="flex gap-1.5">
+                          <input
+                            value={nodeRenameValue}
+                            onChange={e => setNodeRenameValue(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter' && nodeRenameValue.trim()) { setNodeNames(prev => ({ ...prev, [activeNode.id]: nodeRenameValue.trim() })); }}}
+                            placeholder="Rename node..."
+                            className="flex-1 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-[11px] text-slate-200 focus:outline-none focus:border-blue-500"
+                          />
+                          <button onClick={() => nodeRenameValue.trim() && setNodeNames(prev => ({ ...prev, [activeNode.id]: nodeRenameValue.trim() }))}
+                            title="Rename" className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-[11px] text-white transition-colors">✏️</button>
+                          <button onClick={() => activeNode.data?.ipAddress && handlePing(activeNode.data.ipAddress)}
+                            disabled={pingRunning} title="Ping"
+                            className="px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-40 rounded text-[11px] text-white font-bold transition-colors flex items-center gap-1.5">
+                            {pingRunning ? '⏳ Ping...' : '🏓 Ping'}
+                          </button>
+                        </div>
+                        <button onClick={() => activeNode.data?.ipAddress && setSshTarget({ host: activeNode.data.ipAddress, user: 'admin' })}
+                          disabled={!activeNode.data?.ipAddress} title="SSH Terminal"
+                          className="w-full py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 rounded text-[11px] text-white font-bold transition-colors flex items-center justify-center gap-1.5">
+                          🔐 SSH Terminal
+                        </button>
+                      </div>
+                      {pingOutput && (
+                        <pre className="flex-1 bg-slate-950 rounded p-1.5 text-[10px] text-green-400 font-mono overflow-auto whitespace-pre-wrap max-h-24 border border-slate-800">{pingOutput}</pre>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-slate-600 text-xs">Click a node to see actions</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

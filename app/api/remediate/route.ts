@@ -1,0 +1,71 @@
+import { createGroq } from '@ai-sdk/groq';
+import { generateText } from 'ai';
+
+const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+
+export async function POST(req: Request) {
+  const apiKey = req.headers.get('x-api-key');
+  if (apiKey !== process.env.API_SECRET_KEY) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { attackPath, steps, topology, vulnerabilities } = await req.json();
+
+  const pathDevices = (attackPath as string[]).map((id: string) => {
+    const device = topology.devices.find((d: any) => d.id === id);
+    const vuln = vulnerabilities?.[id];
+    return `- ${device?.name || id} (${device?.type || 'unknown'}, IP: ${device?.ipAddress || 'N/A'}) — Risk: ${vuln?.riskLevel || 'UNKNOWN'}`;
+  });
+
+  const stepsDesc = (steps || []).map((s: any) =>
+    `  ${s.from} → ${s.to}: ${s.technique}${s.cve ? ` [${s.cve}]` : ''}`
+  ).join('\n');
+
+  const systemPrompt = `You are a senior network security engineer and hardening specialist (CISSP, CCNP Security).
+Generate specific, actionable remediation recommendations to break the identified attack path.
+
+For each hop in the attack path, provide:
+- node: the device ID being remediated
+- action: human-readable description of what to do
+- aclRule: specific ACL/firewall rule syntax (Cisco IOS or iptables style)
+- patchAction: patch/config change needed
+- priority: "CRITICAL" | "HIGH" | "MEDIUM"
+
+Also provide an overall topology change suggestion if applicable.
+
+Output ONLY valid JSON, no markdown:
+{
+  "remediations": [
+    {
+      "node": "device-id",
+      "nodeName": "Router 1",
+      "action": "Block inbound SSH from untrusted zones",
+      "aclRule": "ip access-list extended BLOCK_SSH\\n deny tcp any host 192.168.1.1 eq 22\\n permit ip any any",
+      "patchAction": "Disable Telnet: no service telnet. Enable SSHv2 only: ip ssh version 2",
+      "priority": "CRITICAL"
+    }
+  ],
+  "topologyChanges": "Consider adding IDS/IPS between Internet and Router 1. Segment database into isolated VLAN.",
+  "summary": "3-sentence executive summary of remediation plan"
+}`;
+
+  const prompt = `
+Attack Path Identified:
+${pathDevices.join('\n')}
+
+Attack Steps:
+${stepsDesc}
+
+Generate remediation rules to break each hop in this attack path.`;
+
+  const { text } = await generateText({
+    model: groq('llama-3.3-70b-versatile'),
+    system: systemPrompt,
+    prompt,
+  });
+
+  const clean = text.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
+
+  return Response.json(parsed);
+}

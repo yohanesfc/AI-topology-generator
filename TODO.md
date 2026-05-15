@@ -44,7 +44,7 @@
 
 - [ ] VXLAN config kadang gagal parse JSON (LLM output tidak konsisten)
 - [ ] Traceroute disabled sementara (info disclosure via hop pertama)
-- [ ] Node rename via action panel tidak sync dengan double-click rename
+- [x] Node rename via action panel tidak sync dengan double-click rename
 - [ ] Canvas height tidak responsive di layar kecil
 
 ## ✅ Completed
@@ -61,3 +61,5 @@
 - [x] Extended node types (IDS, IPS, Cloud, Core Router, NAS, dll)
 - [x] Copy config to clipboard
 - [x] Config modal with blur backdrop
+- [x] Digital Twin for Security (Attack Simulator) visualization
+- [x] Attack path directional logic & attacker/target selection
