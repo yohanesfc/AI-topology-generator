@@ -174,12 +174,20 @@ AI-topology-generator/
 ---
 
 ## 📝 Example Prompts
+
+```
 buat topologi kantor dengan 1 firewall, 2 router, 4 switch, 10 PC
+```
+
+```
 create datacenter topology with core router, layer 3 switch,
 web server, DNS server, NAS, and 5 workstations
+```
+
+```
 topologi ISP dengan cloud, IDS, IPS, 2 core router BGP,
 4 distribution switch, 20 PC
----
+```
 
 ## 📄 License
 
