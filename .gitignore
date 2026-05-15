@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Backup files
+*.bak
+
+# Topology data (local data)
+/data/
+
+# PM2
+ecosystem.config.js
