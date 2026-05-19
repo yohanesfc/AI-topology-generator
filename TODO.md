@@ -19,12 +19,12 @@
 - [ ] **Dark/Light mode toggle**
 
 ## 🤖 AI / LLM
-
-- [ ] **Multi-model support** — dropdown pilih model (Llama 3.3, Mixtral, Gemma)
+ [ ] **Multi-model support** — dropdown pilih model (Llama 3.3, Mixtral, Gemma)
 - [ ] **Fallback model** — auto switch ke model lain saat rate limit
 - [ ] **Token usage counter** — tampilkan estimasi token per request
 - [ ] **Prompt history** — simpan dan re-use prompt sebelumnya
 - [ ] **Config validation** — LLM review config yang dihasilkan sebelum ditampilkan
+-
 
 ## 🔒 Security
 

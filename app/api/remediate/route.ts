@@ -1,7 +1,5 @@
-import { createGroq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
-
-const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+import { getModel } from '@/lib/ai';
 
 export async function POST(req: Request) {
   const apiKey = req.headers.get('x-api-key');
@@ -9,7 +7,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { attackPath, steps, topology, vulnerabilities } = await req.json();
+  const { attackPath, steps, topology, vulnerabilities, modelName } = await req.json();
 
   const pathDevices = (attackPath as string[]).map((id: string) => {
     const device = topology.devices.find((d: any) => d.id === id);
@@ -59,7 +57,7 @@ ${stepsDesc}
 Generate remediation rules to break each hop in this attack path.`;
 
   const { text } = await generateText({
-    model: groq('llama-3.3-70b-versatile'),
+    model: getModel(modelName),
     system: systemPrompt,
     prompt,
   });

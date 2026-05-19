@@ -1,7 +1,5 @@
-import { createGroq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
-
-const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+import { getModel } from '@/lib/ai';
 
 export async function POST(req: Request) {
   const apiKey = req.headers.get('x-api-key');
@@ -9,7 +7,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { topology, attackerNodeId, targetNodeId, vulnerabilities } = await req.json();
+  const { topology, attackerNodeId, targetNodeId, vulnerabilities, modelName } = await req.json();
 
   const deviceList = topology.devices
     .map((d: any) => {
@@ -66,7 +64,7 @@ TARGET: ${targetDevice?.name || targetNodeId} (ID: ${targetNodeId})
 Find the most realistic attack path from attacker to target.`;
 
   const { text } = await generateText({
-    model: groq('llama-3.3-70b-versatile'),
+    model: getModel(modelName),
     system: systemPrompt,
     prompt,
   });

@@ -1,7 +1,5 @@
-import { createGroq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
-
-const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+import { getModel } from '@/lib/ai';
 
 function safeParseJSON(text: string) {
   let clean = text.replace(/```json|```/g, '').trim();
@@ -52,7 +50,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { topology, protocol, mode } = await req.json();
+  const { topology, protocol, mode, modelName } = await req.json();
   const isCoT = mode === 'Chain of Thought';
 
   const protocolGuide: Record<string, string> = {
@@ -83,7 +81,7 @@ export async function POST(req: Request) {
     : `You are a Senior Network Engineer. Generate ${protocol} config. CRITICAL: Output ONLY valid JSON. Escape ALL newlines in config strings as \\n. No literal newlines inside JSON strings. Protocol guide: ${guide}. Example: ${jsonExample}`;
 
   const { text } = await generateText({
-    model: groq('llama-3.3-70b-versatile'),
+    model: getModel(modelName),
     system: systemPrompt,
     prompt: `Topology: ${topology.topologyName}\nProtocol: ${protocol}\n\nDevices:\n${deviceList}\n\nConnections:\n${connectionList}\n\nIMPORTANT: Escape newlines as \\n in all config strings. Generate complete ${protocol} config for ALL devices.`,
   });

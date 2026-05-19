@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Share2, CheckCircle, XCircle, Clock, RefreshCw, Shield, Zap } from 'lucide-react';
+import { Share2, CheckCircle, XCircle, Clock, RefreshCw, Shield, Zap, Image as ImageIcon, X } from 'lucide-react';
 import TopologyCanvas from '@/components/TopologyCanvas';
 import dynamic from 'next/dynamic';
 import AttackSimulator from '@/components/AttackSimulator';
@@ -47,6 +47,22 @@ export default function NetworkAutomationPage() {
   const [topologyMode, setTopologyMode] = useState<string>('Structured');
   const [savedTopologies, setSavedTopologies] = useState<any[]>([]);
   const [showSaved, setShowSaved] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('llama-3.3-70b-versatile');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!selectedModel.startsWith('gemini-') && !selectedModel.startsWith('gpt-')) {
+         setSelectedModel('gemini-2.5-flash');
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // ── Attack Simulator state ──────────────────────────────────────
   const [appMode, setAppMode] = useState<'design' | 'simulate'>('design');
@@ -82,7 +98,7 @@ export default function NetworkAutomationPage() {
       const res = await fetch('/api/generate-topology', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' },
-        body: JSON.stringify({ prompt: input, mode: topologyMode }),
+        body: JSON.stringify({ prompt: input, mode: topologyMode, modelName: selectedModel, image: uploadedImage }),
       });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       setObject(await res.json());
@@ -177,7 +193,7 @@ export default function NetworkAutomationPage() {
       const res = await fetch('/api/generate-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' },
-        body: JSON.stringify({ topology: object, protocol, mode }),
+        body: JSON.stringify({ topology: object, protocol, mode, modelName: selectedModel }),
       });
       if (!res.ok) throw new Error(`Config error: ${res.status}`);
       const data = await res.json();
@@ -228,7 +244,7 @@ export default function NetworkAutomationPage() {
       const res = await fetch('/api/analyze-attack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' },
-        body: JSON.stringify({ topology: object }),
+        body: JSON.stringify({ topology: object, modelName: selectedModel }),
       });
       const data = await res.json();
       setVulnerabilities(data.vulnerabilities || {});
@@ -248,7 +264,7 @@ export default function NetworkAutomationPage() {
       const res = await fetch('/api/simulate-path', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' },
-        body: JSON.stringify({ topology: object, attackerNodeId, targetNodeId, vulnerabilities }),
+        body: JSON.stringify({ topology: object, attackerNodeId, targetNodeId, vulnerabilities, modelName: selectedModel }),
       });
       if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
       const data = await res.json();
@@ -270,7 +286,7 @@ export default function NetworkAutomationPage() {
       const res = await fetch('/api/remediate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_API_SECRET_KEY || '' },
-        body: JSON.stringify({ attackPath: attackResult.attackPath, steps: attackResult.steps, topology: object, vulnerabilities }),
+        body: JSON.stringify({ attackPath: attackResult.attackPath, steps: attackResult.steps, topology: object, vulnerabilities, modelName: selectedModel }),
       });
       const data = await res.json();
       setRemediationResult(data);
@@ -299,28 +315,55 @@ export default function NetworkAutomationPage() {
             <p className="text-slate-400">Generative AI for Network Architecture (Max 20 Devices)</p>
           </div>
 
-          {/* Mode Toggle */}
-          <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-700 rounded-xl">
-            <button
-              onClick={() => setAppMode('design')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                appMode === 'design'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+          {/* Top Header Options */}
+          <div className="flex items-center gap-3">
+            {/* Model Dropdown */}
+            <select
+              className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+              value={selectedModel}
+              onChange={e => setSelectedModel(e.target.value)}
             >
-              <Share2 size={14} /> Design
-            </button>
-            <button
-              onClick={() => setAppMode('simulate')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                appMode === 'simulate'
-                  ? 'bg-red-700 text-white shadow-lg shadow-red-500/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Zap size={14} /> Simulate
-            </button>
+              <optgroup label="Groq">
+                <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+                <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill</option>
+              </optgroup>
+              <optgroup label="Google">
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+              </optgroup>
+              <optgroup label="OpenAI">
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-4o">GPT-4o</option>
+              </optgroup>
+              <optgroup label="DeepSeek">
+                <option value="deepseek-chat">DeepSeek V3</option>
+                <option value="deepseek-reasoner">DeepSeek R1</option>
+              </optgroup>
+            </select>
+
+            {/* Mode Toggle */}
+            <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-700 rounded-xl">
+              <button
+                onClick={() => setAppMode('design')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  appMode === 'design'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Share2 size={14} /> Design
+              </button>
+              <button
+                onClick={() => setAppMode('simulate')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  appMode === 'simulate'
+                    ? 'bg-red-700 text-white shadow-lg shadow-red-500/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Zap size={14} /> Simulate
+              </button>
+            </div>
           </div>
         </header>
 
@@ -338,14 +381,30 @@ export default function NetworkAutomationPage() {
             />
 
             {appMode !== 'simulate' && (
-            <div className="flex gap-1 flex-shrink-0">
-              {['Structured', 'Chain of Thought'].map(m => (
-                <button key={m} onClick={() => setTopologyMode(m)}
-                  className={`flex-1 py-1.5 rounded text-[11px] font-semibold transition-colors ${topologyMode === m ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-                  {m === 'Structured' ? '📐 Structured' : '🧠 Chain of Thought'}
-                </button>
-              ))}
+            <div className="flex gap-1 flex-shrink-0 items-center">
+              <label className="cursor-pointer px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+                <ImageIcon size={14} />
+                <span className="text-[11px] font-semibold">Image</span>
+                <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleImageUpload} />
+              </label>
+              <div className="flex-1 flex gap-1">
+                {['Structured', 'Chain of Thought'].map(m => (
+                  <button key={m} onClick={() => setTopologyMode(m)}
+                    className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${topologyMode === m ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+                    {m === 'Structured' ? '📐 Structured' : '🧠 Chain of Thought'}
+                  </button>
+                ))}
+              </div>
             </div>
+            )}
+            
+            {uploadedImage && (
+              <div className="relative w-full h-32 rounded-lg border border-slate-700 overflow-hidden flex-shrink-0">
+                <img src={uploadedImage} alt="Uploaded topology" className="w-full h-full object-cover" />
+                <button onClick={() => setUploadedImage(null)} className="absolute top-1 right-1 p-1 bg-black/60 rounded-full hover:bg-red-500/80 transition-colors text-white">
+                  <X size={14} />
+                </button>
+              </div>
             )}
             <button
               onClick={handleSubmit}

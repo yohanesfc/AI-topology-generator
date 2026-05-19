@@ -1,8 +1,6 @@
-import { createGroq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
 import { topologySchema } from '@/lib/schema';
-
-const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+import { getModel } from '@/lib/ai';
 
 export async function POST(req: Request) {
   const apiKey = req.headers.get('x-api-key');
@@ -10,7 +8,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { prompt, mode } = await req.json();
+  const { prompt, mode, modelName, image } = await req.json();
   const isCoT = mode === 'Chain of Thought';
 
   const systemPrompt = isCoT
@@ -47,10 +45,23 @@ STRICT RULES:
   "connections": [{"from":"FW1","to":"R1","interface":"G0/0"}]
 }`;
 
+  const messageContent: any[] = [];
+  messageContent.push({ type: 'text', text: prompt || 'Convert this network diagram into a topology according to the rules.' });
+  if (image) {
+    // Extract base64 data ignoring the data URL prefix (e.g., data:image/png;base64,...)
+    const base64Data = image.includes(',') ? image.split(',')[1] : image;
+    messageContent.push({ type: 'image', image: base64Data });
+  }
+
   const { text } = await generateText({
-    model: groq('llama-3.3-70b-versatile'),
+    model: getModel(modelName),
     system: systemPrompt,
-    prompt: prompt,
+    messages: [
+      {
+        role: 'user',
+        content: messageContent,
+      }
+    ]
   });
 
   const clean = text.replace(/```json|```/g, '').trim();
