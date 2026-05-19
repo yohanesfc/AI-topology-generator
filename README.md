@@ -27,6 +27,8 @@ A **Generative AI-powered** web application for designing network topologies fro
 
 ### 🗺️ Interactive Canvas
 - Hierarchical layout (Firewall → Router → Switch → Server → PC)
+- **Cisco Network Icon Integration** — Uses premium Cisco JPG icons mapped specifically to each node type
+- **Minimal Frameless Design** — Clean visual presentation where only icons, connection links, and text labels float on the canvas (bounding boxes and default selection outlines removed)
 - Animated traffic flow edges
 - Click node → Action Panel (Rename, Ping, SSH)
 - Double-click node → inline rename
@@ -36,6 +38,11 @@ A **Generative AI-powered** web application for designing network topologies fro
 - Generate CLI configs for all devices from topology
 - Supported protocols: **OSPF, BGP, EIGRP, Static Routing, VLAN, MPLS, SR-TE, VXLAN**
 - Chain of Thought mode shows reasoning per device
+- **Inline Config Editor** — Edit CLI configs directly in the browser within the Config Modal (persists changes per device, offers an easy reset option to revert to AI-generated defaults)
+- **🚀 Push Config to Device via SSH** — Push generated or customized config directly to active network devices
+  - Supports **Cisco IOS Mode** (automatically enters enable mode, configures terminal, pastes config line-by-line, and saves via `write memory`) and **Raw/Linux Mode**
+  - Authenticates with password or SSH public key (`~/.ssh/id_rsa`)
+  - Displays a live scrollable terminal-style output log to monitor connection and paste progress
 - Copy config to clipboard per device
 - Modal popup with blur backdrop
 
@@ -165,18 +172,18 @@ AI-topology-generator/
 
 ## 🖥️ Supported Node Types
 
-| Type | Emoji | Color |
+| Type | Cisco JPG Icon | Color |
 |---|---|---|
-| Firewall | 🛡️ | Red |
-| IDS / IPS | 🔍 🚨 | Dark Red |
-| Cloud / Internet | ☁️ 🌐 | Light Blue |
-| Router / Core Router / Cisco Router | 🔀 | Orange |
-| Layer 3 Switch | 🔃 | Dark Orange |
-| Switch / Core Switch | 🔌 | Green |
-| Access Point / WAP | 📡 📶 | Cyan |
-| Server / Core Server / Web / DNS / DHCP | 🖥️ 🗄️ | Purple |
-| PC / Laptop / Workstation | 💻 🖱️ | Blue |
-| Printer / Phone | 🖨️ 📱 | Dark Blue |
+| Firewall | `firewall.jpg` | Red |
+| IDS / IPS | `netranger.jpg` / `ciscosecurity.jpg` | Dark Red |
+| Cloud / Internet | `cloud.jpg` | Light Blue |
+| Router / Core Router / Cisco Router | `router.jpg` / `carrier routing system.jpg` | Orange |
+| Layer 3 Switch | `layer 3 switch.jpg` | Dark Orange |
+| Switch / Core Switch | `workgroup switch.jpg` / `Nexus 7000.jpg` | Green |
+| Access Point / WAP | `accesspoint.jpg` | Cyan |
+| Server / Core Server / Web / DNS / DHCP | `standard host.jpg` / `server switch.jpg` / `www server.jpg` / `directory server.jpg` | Purple |
+| PC / Laptop / Workstation | `pc.jpg` / `laptop.jpg` / `workstation.jpg` | Blue |
+| Printer / Phone | `printer.jpg` / `ip phone.jpg` | Dark Blue |
 
 ---
 

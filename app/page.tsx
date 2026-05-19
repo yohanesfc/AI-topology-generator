@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import AttackSimulator from '@/components/AttackSimulator';
 import type { VulnData, AttackResult, RemediationResult } from '@/components/AttackSimulator';
 const SshTerminal = dynamic(() => import('@/components/SshTerminal'), { ssr: false });
+const PushConfigModal = dynamic(() => import('@/components/PushConfigModal'), { ssr: false });
 
 interface Template {
   id: number;
@@ -49,6 +50,9 @@ export default function NetworkAutomationPage() {
   const [showSaved, setShowSaved] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('llama-3.3-70b-versatile');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [pushTarget, setPushTarget] = useState<{ deviceId: string; deviceName: string; type: string; config: string; ipAddress?: string } | null>(null);
+  const [editedConfigs, setEditedConfigs] = useState<Record<string, string>>({});
+  const [editingConfigId, setEditingConfigId] = useState<string | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -653,26 +657,95 @@ export default function NetworkAutomationPage() {
               ))}
             </div>
             {/* Config content */}
-            {configs.configs.filter((c: any) => c.deviceId === selectedDevice).map((c: any) => (
-              <div key={c.deviceId} className="flex flex-col flex-1 min-h-0 gap-2">
-                <div className="flex items-center justify-between flex-shrink-0">
-                  <span className="text-xs text-slate-500">{c.deviceName} · {c.type}</span>
-                  <button onClick={() => navigator.clipboard.writeText(c.config)}
-                    className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-slate-300 hover:text-white transition-colors">
-                    📋 Copy Config
-                  </button>
+            {configs.configs.filter((c: any) => c.deviceId === selectedDevice).map((c: any) => {
+              const displayConfig = editedConfigs[c.deviceId] ?? c.config;
+              const isEditing = editingConfigId === c.deviceId;
+              return (
+                <div key={c.deviceId} className="flex flex-col flex-1 min-h-0 gap-2">
+                  <div className="flex items-center justify-between flex-shrink-0">
+                    <span className="text-xs text-slate-500">{c.deviceName} · {c.type}</span>
+                    <div className="flex gap-2">
+                      {/* Edit / Done toggle */}
+                      <button
+                        onClick={() => {
+                          if (isEditing) {
+                            setEditingConfigId(null);
+                          } else {
+                            // seed editor with current (possibly edited) text
+                            if (!editedConfigs[c.deviceId]) setEditedConfigs(prev => ({ ...prev, [c.deviceId]: c.config }));
+                            setEditingConfigId(c.deviceId);
+                          }
+                        }}
+                        className={`px-3 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 ${
+                          isEditing
+                            ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
+                            : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
+                        }`}>
+                        {isEditing ? '✅ Done' : '✏️ Edit'}
+                      </button>
+                      <button onClick={() => navigator.clipboard.writeText(displayConfig)}
+                        className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-slate-300 hover:text-white transition-colors">
+                        📋 Copy
+                      </button>
+                      <button
+                        onClick={() => setPushTarget({
+                          deviceId: c.deviceId,
+                          deviceName: c.deviceName,
+                          type: c.type,
+                          config: displayConfig,
+                          ipAddress: object?.devices?.find((d: any) => d.id === c.deviceId)?.ipAddress,
+                        })}
+                        className="px-3 py-1 bg-cyan-700 hover:bg-cyan-600 rounded text-xs text-white font-semibold transition-colors flex items-center gap-1.5">
+                        🚀 Push to Device
+                      </button>
+                    </div>
+                  </div>
+                  {c.reasoning && (
+                    <details className="flex-shrink-0">
+                      <summary className="text-xs text-yellow-400 cursor-pointer hover:text-yellow-300">🧠 Chain of Thought Reasoning</summary>
+                      <pre className="bg-slate-950 rounded p-3 text-xs text-yellow-300/70 font-mono overflow-auto max-h-32 whitespace-pre-wrap mt-1">{c.reasoning}</pre>
+                    </details>
+                  )}
+                  {isEditing ? (
+                    <textarea
+                      className="flex-1 bg-slate-950 rounded-xl p-4 text-xs text-green-400 font-mono overflow-auto whitespace-pre border border-yellow-500/40 resize-none focus:outline-none focus:border-yellow-400 transition-colors"
+                      style={{ minHeight: '200px' }}
+                      value={displayConfig}
+                      onChange={e => setEditedConfigs(prev => ({ ...prev, [c.deviceId]: e.target.value }))}
+                      spellCheck={false}
+                    />
+                  ) : (
+                    <pre
+                      className="flex-1 bg-slate-950 rounded-xl p-4 text-xs text-green-400 font-mono overflow-auto whitespace-pre-wrap border border-slate-800"
+                      onClick={() => {
+                        if (!editedConfigs[c.deviceId]) setEditedConfigs(prev => ({ ...prev, [c.deviceId]: c.config }));
+                        setEditingConfigId(c.deviceId);
+                      }}
+                      title="Click to edit"
+                      style={{ cursor: 'text' }}
+                    >{displayConfig}</pre>
+                  )}
+                  {editedConfigs[c.deviceId] && editedConfigs[c.deviceId] !== c.config && (
+                    <div className="flex items-center justify-between text-[10px] text-yellow-400/80 px-1 flex-shrink-0">
+                      <span>✏️ Edited (differs from generated)</span>
+                      <button
+                        onClick={() => setEditedConfigs(prev => { const n = { ...prev }; delete n[c.deviceId]; return n; })}
+                        className="text-slate-500 hover:text-red-400 transition-colors"
+                      >Reset to original</button>
+                    </div>
+                  )}
                 </div>
-                {c.reasoning && (
-                  <details className="flex-shrink-0">
-                    <summary className="text-xs text-yellow-400 cursor-pointer hover:text-yellow-300">🧠 Chain of Thought Reasoning</summary>
-                    <pre className="bg-slate-950 rounded p-3 text-xs text-yellow-300/70 font-mono overflow-auto max-h-32 whitespace-pre-wrap mt-1">{c.reasoning}</pre>
-                  </details>
-                )}
-                <pre className="flex-1 bg-slate-950 rounded-xl p-4 text-xs text-green-400 font-mono overflow-auto whitespace-pre-wrap border border-slate-800">{c.config}</pre>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
+      )}
+
+      {pushTarget && (
+        <PushConfigModal
+          device={pushTarget}
+          onClose={() => setPushTarget(null)}
+        />
       )}
 
       {sshTarget && (

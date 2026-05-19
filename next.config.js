@@ -2,6 +2,8 @@
 const nextConfig = {
   allowedDevOrigins: ['auto-net.yohanesfc.web.id'],
   poweredByHeader: false,
+  serverExternalPackages: ['ssh2'],
+
   async headers() {
     return [
       {

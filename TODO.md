@@ -12,7 +12,7 @@
 - [ ] **Multi-topology workspace** — tabs untuk switch antar topologi
 - [ ] **Rename from chat** — `rename FW1 Firewall-Core` command in prompt
 - [ ] **Traceroute** — re-enable with private IP restriction only
-- [ ] **Push config to device** — via SSH, paste config langsung ke device
+- [x] **Push config to device** — via SSH, paste config langsung ke device
 - [ ] **Config diff** — compare generated config vs running config
 - [ ] **Topology templates** — pre-built templates (datacenter, campus, SOHO, ISP)
 - [ ] **Chain of Thought for topology** — show reasoning expandable in UI
@@ -63,3 +63,8 @@
 - [x] Config modal with blur backdrop
 - [x] Digital Twin for Security (Attack Simulator) visualization
 - [x] Attack path directional logic & attacker/target selection
+- [x] Push config to device via SSH (Cisco IOS & Raw/Linux modes with Password/Key authentication)
+- [x] Inline Config Editor inside Config Modal (Edit -> Done toggle with state persistence and copy/push sync)
+- [x] Premium Cisco-style JPG icons for topology nodes
+- [x] Minimal borderless layout for topology canvas (transparent node boxes, selection outlines removed)
+

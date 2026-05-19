@@ -10,37 +10,37 @@ const SshTerminal = dynamic(() => import('./SshTerminal'), { ssr: false });
 
 // ─── Device Type Metadata ─────────────────────────────────────────────────────
 
-const TYPE_META: Record<string, { color: string; emoji: string; tier: number }> = {
+const TYPE_META: Record<string, { color: string; icon: string; tier: number }> = {
   // Tier 0 - Security/Edge
-  Firewall:       { color: '#ef4444', emoji: '🛡️', tier: 0 },
-  IDS:            { color: '#dc2626', emoji: '🔍', tier: 0 },
-  IPS:            { color: '#b91c1c', emoji: '🚨', tier: 0 },
-  Cloud:          { color: '#7dd3fc', emoji: '☁️', tier: 0 },
-  Internet:       { color: '#93c5fd', emoji: '🌐', tier: 0 },
+  Firewall:         { color: '#ef4444', icon: '/icons/firewall.jpg',           tier: 0 },
+  IDS:              { color: '#dc2626', icon: '/icons/netranger.jpg',           tier: 0 },
+  IPS:              { color: '#b91c1c', icon: '/icons/ciscosecurity.jpg',       tier: 0 },
+  Cloud:            { color: '#7dd3fc', icon: '/icons/cloud.jpg',               tier: 0 },
+  Internet:         { color: '#93c5fd', icon: '/icons/cloud.jpg',               tier: 0 },
   // Tier 1 - Routing
-  Router:         { color: '#f97316', emoji: '🔀', tier: 1 },
-  'Core Router':  { color: '#ea580c', emoji: '🔁', tier: 1 },
-  'Cisco Router': { color: '#c2410c', emoji: '🔀', tier: 1 },
-  'Layer 3 Switch': { color: '#16a34a', emoji: '🔃', tier: 1 },
+  Router:           { color: '#f97316', icon: '/icons/router.jpg',              tier: 1 },
+  'Core Router':    { color: '#ea580c', icon: '/icons/carrier routing system.jpg', tier: 1 },
+  'Cisco Router':   { color: '#c2410c', icon: '/icons/router.jpg',              tier: 1 },
+  'Layer 3 Switch': { color: '#16a34a', icon: '/icons/layer 3 switch.jpg',      tier: 1 },
   // Tier 2 - Switching
-  Switch:         { color: '#22c55e', emoji: '🔌', tier: 2 },
-  'Core Switch':  { color: '#15803d', emoji: '🔌', tier: 2 },
-  'Access Point': { color: '#06b6d4', emoji: '📡', tier: 2 },
-  WAP:            { color: '#0891b2', emoji: '📶', tier: 2 },
+  Switch:           { color: '#22c55e', icon: '/icons/workgroup switch.jpg',    tier: 2 },
+  'Core Switch':    { color: '#15803d', icon: '/icons/Nexus 7000.jpg',          tier: 2 },
+  'Access Point':   { color: '#06b6d4', icon: '/icons/accesspoint.jpg',         tier: 2 },
+  WAP:              { color: '#0891b2', icon: '/icons/accesspoint.jpg',         tier: 2 },
   // Tier 3 - Servers
-  Server:         { color: '#a855f7', emoji: '🖥️', tier: 3 },
-  'Core Server':  { color: '#9333ea', emoji: '🗄️', tier: 3 },
-  'Web Server':   { color: '#7c3aed', emoji: '🌍', tier: 3 },
-  'DNS Server':   { color: '#6d28d9', emoji: '📖', tier: 3 },
-  'DHCP Server':  { color: '#5b21b6', emoji: '📋', tier: 3 },
-  'Mail Server':  { color: '#4c1d95', emoji: '📧', tier: 3 },
-  NAS:            { color: '#8b5cf6', emoji: '💾', tier: 3 },
+  Server:           { color: '#a855f7', icon: '/icons/standard host.jpg',       tier: 3 },
+  'Core Server':    { color: '#9333ea', icon: '/icons/server switch.jpg',       tier: 3 },
+  'Web Server':     { color: '#7c3aed', icon: '/icons/www server.jpg',          tier: 3 },
+  'DNS Server':     { color: '#6d28d9', icon: '/icons/directory server.jpg',    tier: 3 },
+  'DHCP Server':    { color: '#5b21b6', icon: '/icons/standard host.jpg',       tier: 3 },
+  'Mail Server':    { color: '#4c1d95', icon: '/icons/communications server.jpg', tier: 3 },
+  NAS:              { color: '#8b5cf6', icon: '/icons/storage server.jpg',      tier: 3 },
   // Tier 4 - End Devices
-  PC:             { color: '#3b82f6', emoji: '💻', tier: 4 },
-  Workstation:    { color: '#60a5fa', emoji: '🖱️', tier: 4 },
-  Laptop:         { color: '#2563eb', emoji: '💻', tier: 4 },
-  Printer:        { color: '#1d4ed8', emoji: '🖨️', tier: 4 },
-  Phone:          { color: '#1e40af', emoji: '📱', tier: 4 },
+  PC:               { color: '#3b82f6', icon: '/icons/pc.jpg',                  tier: 4 },
+  Workstation:      { color: '#60a5fa', icon: '/icons/workstation.jpg',         tier: 4 },
+  Laptop:           { color: '#2563eb', icon: '/icons/laptop.jpg',              tier: 4 },
+  Printer:          { color: '#1d4ed8', icon: '/icons/printer.jpg',             tier: 4 },
+  Phone:            { color: '#1e40af', icon: '/icons/ip phone.jpg',            tier: 4 },
 };
 
 const RISK_BORDER: Record<string, { border: string; glow: string; badge: string }> = {
@@ -51,8 +51,8 @@ const RISK_BORDER: Record<string, { border: string; glow: string; badge: string 
   CRITICAL: { border: '#ef4444', glow: '0 0 18px 6px #ef444477', badge: '🔴' },
 };
 
-const NODE_W = 130;
-const NODE_H = 44;
+const NODE_W = 90;
+const NODE_H = 80;
 const TIER_GAP = 120;
 const NODE_GAP = 160;
 
@@ -87,7 +87,7 @@ function normalizeType(type: string): string {
 }
 
 function getMeta(type: string) {
-  return TYPE_META[normalizeType(type)] ?? { color: '#64748b', emoji: '📦', tier: 3 };
+  return TYPE_META[normalizeType(type)] ?? { color: '#64748b', icon: '/icons/standard host.jpg', tier: 3 };
 }
 
 function computeLayout(devices: Topology['devices']) {
@@ -292,23 +292,24 @@ export default function TopologyCanvasInner({
       const vuln = simMode ? vulnerabilities[device.id] : undefined;
       const riskCfg = vuln ? RISK_BORDER[vuln.riskLevel] : null;
 
-      // Determine border & box-shadow override in sim mode
-      let nodeBorder = isEditing ? '2px solid #38bdf8' : `2px solid ${meta.color}`;
-      let nodeGlow = isEditing ? '0 0 20px #38bdf888' : `0 0 14px ${meta.color}44`;
-      let nodeBackground = `linear-gradient(145deg, ${meta.color}ee, ${meta.color}88)`;
+      // Transparent by default — only show glows in sim mode
+      let nodeBorder = isEditing ? '2px solid #38bdf8' : 'none';
+      let nodeGlow = isEditing ? '0 0 20px #38bdf888' : 'none';
+      let nodeBackground = 'transparent';
 
       if (simMode) {
         if (isAttacker) {
           nodeBorder = '3px solid #ef4444';
           nodeGlow = '0 0 24px 8px #ef444499';
-          nodeBackground = 'linear-gradient(145deg, #7f1d1dee, #991b1baa)';
+          nodeBackground = '#ef444422';
         } else if (isTarget) {
           nodeBorder = '3px solid #eab308';
           nodeGlow = '0 0 24px 8px #eab30899';
-          nodeBackground = 'linear-gradient(145deg, #78350fee, #92400eaa)';
+          nodeBackground = '#eab30822';
         } else if (isOnPath) {
           nodeBorder = '2px solid #f97316';
           nodeGlow = '0 0 16px 4px #f9731666';
+          nodeBackground = '#f9731611';
         } else if (riskCfg?.border) {
           nodeBorder = `2px solid ${riskCfg.border}`;
           nodeGlow = riskCfg.glow;
@@ -349,12 +350,26 @@ export default function TopologyCanvasInner({
               }}
             />
           ) : (
-            <span style={{ whiteSpace: 'pre-line', fontSize: '11px', fontWeight: 700 }}>
-              {isAttacker
-                ? `🔴 ${displayName}\n(ATTACKER)`
-                : isTarget
-                  ? `🎯 ${displayName}\n(TARGET)`
-                  : `${meta.emoji}${riskBadge} ${displayName}\n(${device.type})`}
+            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '10px', fontWeight: 700, lineHeight: 1.2 }}>
+              {isAttacker ? (
+                <>
+                  <span style={{ fontSize: '16px' }}>🔴</span>
+                  <span>{displayName}</span>
+                  <span style={{ fontSize: '9px', opacity: 0.8 }}>(ATTACKER)</span>
+                </>
+              ) : isTarget ? (
+                <>
+                  <span style={{ fontSize: '16px' }}>🎯</span>
+                  <span>{displayName}</span>
+                  <span style={{ fontSize: '9px', opacity: 0.8 }}>(TARGET)</span>
+                </>
+              ) : (
+                <>
+                  <img src={meta.icon} alt={device.type} style={{ width: '48px', height: '48px', objectFit: 'contain', filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))' }} />
+                  {riskBadge && <span style={{ fontSize: '10px', lineHeight: 1 }}>{riskBadge}</span>}
+                  <span style={{ fontSize: '9px', maxWidth: '86px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#e2e8f0', textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>{displayName}</span>
+                </>
+              )}
             </span>
           ),
         },
@@ -362,7 +377,7 @@ export default function TopologyCanvasInner({
         style: {
           background: nodeBackground,
           color: '#fff',
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: nodeBorder,
           boxShadow: nodeGlow,
           width: NODE_W,

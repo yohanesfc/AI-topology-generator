@@ -43,6 +43,23 @@
   color: #475569 !important;
 }
 
+/* Hide node selection box — icons only */
+.react-flow__node {
+  box-shadow: none !important;
+}
+.react-flow__node.selected,
+.react-flow__node:focus,
+.react-flow__node:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.react-flow__node .react-flow__handle {
+  opacity: 0;
+  width: 6px;
+  height: 6px;
+}
+
+
 /* Hide Next.js dev indicator */
 nextjs-portal {
   display: none !important;
