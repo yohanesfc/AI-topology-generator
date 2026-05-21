@@ -1,5 +1,7 @@
 import { generateText } from 'ai';
 import { getModel } from '@/lib/ai';
+import { topologySchema } from '@/lib/schema';
+import { validateModelName } from '@/lib/validation';
 
 export async function POST(req: Request) {
   const apiKey = req.headers.get('x-api-key');
@@ -8,6 +10,17 @@ export async function POST(req: Request) {
   }
 
   const { topology, modelName } = await req.json();
+
+  // 1. Validate topology payload
+  const parseResult = topologySchema.safeParse(topology);
+  if (!parseResult.success) {
+    return Response.json({ error: 'Invalid topology data structure' }, { status: 400 });
+  }
+
+  // 2. Validate modelName
+  if (!modelName || !validateModelName(modelName)) {
+    return Response.json({ error: 'Model not supported or invalid' }, { status: 400 });
+  }
 
   const deviceList = topology.devices
     .map((d: any) => `- ID: ${d.id}, Name: ${d.name}, Type: ${d.type}, IP: ${d.ipAddress || 'N/A'}`)

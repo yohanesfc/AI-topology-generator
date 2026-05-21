@@ -1,5 +1,7 @@
 import { generateText } from 'ai';
 import { getModel } from '@/lib/ai';
+import { topologySchema } from '@/lib/schema';
+import { validateModelName, validateProtocol } from '@/lib/validation';
 
 function safeParseJSON(text: string) {
   let clean = text.replace(/```json|```/g, '').trim();
@@ -51,6 +53,28 @@ export async function POST(req: Request) {
   }
 
   const { topology, protocol, mode, modelName } = await req.json();
+
+  // 1. Validate topology payload
+  const parseResult = topologySchema.safeParse(topology);
+  if (!parseResult.success) {
+    return Response.json({ error: 'Invalid topology data structure' }, { status: 400 });
+  }
+
+  // 2. Validate protocol
+  if (!protocol || !validateProtocol(protocol)) {
+    return Response.json({ error: 'Invalid or unsupported routing/switching protocol' }, { status: 400 });
+  }
+
+  // 3. Validate mode
+  if (mode !== 'Structured' && mode !== 'Chain of Thought') {
+    return Response.json({ error: 'Invalid generation mode' }, { status: 400 });
+  }
+
+  // 4. Validate modelName
+  if (!modelName || !validateModelName(modelName)) {
+    return Response.json({ error: 'Model not supported or invalid' }, { status: 400 });
+  }
+
   const isCoT = mode === 'Chain of Thought';
 
   const protocolGuide: Record<string, string> = {

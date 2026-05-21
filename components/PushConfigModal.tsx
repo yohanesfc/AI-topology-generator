@@ -59,7 +59,7 @@ export default function PushConfigModal({ device, onClose }: Props) {
 
       {/* Modal */}
       <div className="relative z-10 bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl w-[680px] max-w-[95vw] flex flex-col overflow-hidden"
-           style={{ boxShadow: '0 0 40px rgba(6,182,212,0.12)' }}>
+        style={{ boxShadow: '0 0 40px rgba(6,182,212,0.12)' }}>
 
         {/* Title bar */}
         <div className="flex items-center justify-between px-5 py-3 bg-slate-950 border-b border-slate-800">
@@ -121,21 +121,19 @@ export default function PushConfigModal({ device, onClose }: Props) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setAuthMode('password')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                    authMode === 'password'
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-all ${authMode === 'password'
                       ? 'bg-blue-600 border-blue-500 text-white'
                       : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-500'
-                  }`}
+                    }`}
                 >
                   <Lock size={12} /> Password
                 </button>
                 <button
                   onClick={() => setAuthMode('key')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                    authMode === 'key'
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-all ${authMode === 'key'
                       ? 'bg-green-700 border-green-500 text-white'
                       : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-500'
-                  }`}
+                    }`}
                 >
                   <Key size={12} /> SSH Key
                 </button>
@@ -148,21 +146,19 @@ export default function PushConfigModal({ device, onClose }: Props) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setDeviceMode('ios')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                    deviceMode === 'ios'
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-all ${deviceMode === 'ios'
                       ? 'bg-orange-700 border-orange-500 text-white'
                       : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-500'
-                  }`}
+                    }`}
                 >
                   🖧 Cisco IOS
                 </button>
                 <button
                   onClick={() => setDeviceMode('raw')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                    deviceMode === 'raw'
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-all ${deviceMode === 'raw'
                       ? 'bg-purple-700 border-purple-500 text-white'
                       : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-500'
-                  }`}
+                    }`}
                 >
                   <Terminal size={12} /> Raw / Linux
                 </button>
@@ -226,12 +222,10 @@ export default function PushConfigModal({ device, onClose }: Props) {
 
           {/* Output log */}
           {output !== null && (
-            <div className={`rounded-xl border overflow-hidden transition-all ${
-              success ? 'border-green-500/40 bg-green-950/20' : 'border-red-500/40 bg-red-950/20'
-            }`}>
-              <div className={`px-3 py-1.5 text-[11px] font-bold border-b flex items-center gap-2 ${
-                success ? 'text-green-400 border-green-500/20' : 'text-red-400 border-red-500/20'
+            <div className={`rounded-xl border overflow-hidden transition-all ${success ? 'border-green-500/40 bg-green-950/20' : 'border-red-500/40 bg-red-950/20'
               }`}>
+              <div className={`px-3 py-1.5 text-[11px] font-bold border-b flex items-center gap-2 ${success ? 'text-green-400 border-green-500/20' : 'text-red-400 border-red-500/20'
+                }`}>
                 {success ? '✅ Push successful' : '❌ Push failed'}
               </div>
               <pre className="p-3 text-[11px] font-mono text-slate-300 overflow-auto max-h-56 whitespace-pre-wrap">

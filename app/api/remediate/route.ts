@@ -1,5 +1,7 @@
 import { generateText } from 'ai';
 import { getModel } from '@/lib/ai';
+import { topologySchema } from '@/lib/schema';
+import { validateModelName } from '@/lib/validation';
 
 export async function POST(req: Request) {
   const apiKey = req.headers.get('x-api-key');
@@ -8,6 +10,22 @@ export async function POST(req: Request) {
   }
 
   const { attackPath, steps, topology, vulnerabilities, modelName } = await req.json();
+
+  // 1. Validate topology payload
+  const parseResult = topologySchema.safeParse(topology);
+  if (!parseResult.success) {
+    return Response.json({ error: 'Invalid topology data structure' }, { status: 400 });
+  }
+
+  // 2. Validate attackPath
+  if (!attackPath || !Array.isArray(attackPath) || attackPath.some(id => typeof id !== 'string')) {
+    return Response.json({ error: 'Invalid or missing attackPath array' }, { status: 400 });
+  }
+
+  // 3. Validate modelName
+  if (!modelName || !validateModelName(modelName)) {
+    return Response.json({ error: 'Model not supported or invalid' }, { status: 400 });
+  }
 
   const pathDevices = (attackPath as string[]).map((id: string) => {
     const device = topology.devices.find((d: any) => d.id === id);

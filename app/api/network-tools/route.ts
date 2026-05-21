@@ -9,7 +9,10 @@ export async function POST(req: NextRequest) {
 
   // Rate limit: only allow private IP ranges as targets
   const privateIP = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.)/.test(host);
-  const publicAllowed = ['8.8.8.8', '8.8.4.4', '1.1.1.1'];
+  const publicAllowed = [
+    '8.8.8.8', '8.8.4.4',
+    '1.1.1.1', '2.2.2.2', '3.3.3.3', '4.4.4.4', '5.5.5.5', '6.6.6.6', '7.7.7.7', '9.9.9.9', '10.10.10.10'
+  ];
   if (!privateIP && !publicAllowed.includes(host)) {
     return NextResponse.json({ error: 'Host not allowed' }, { status: 403 });
   }

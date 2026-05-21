@@ -1,6 +1,7 @@
 import { generateText } from 'ai';
 import { topologySchema } from '@/lib/schema';
 import { getModel } from '@/lib/ai';
+import { sanitizePrompt, detectJailbreak, validateModelName } from '@/lib/validation';
 
 export async function POST(req: Request) {
   const apiKey = req.headers.get('x-api-key');
@@ -9,6 +10,39 @@ export async function POST(req: Request) {
   }
 
   const { prompt, mode, modelName, image } = await req.json();
+
+  // 1. Validate prompt
+  if (prompt && typeof prompt !== 'string') {
+    return Response.json({ error: 'Invalid prompt type' }, { status: 400 });
+  }
+  
+  if (!prompt && !image) {
+    return Response.json({ error: 'Prompt or image is required' }, { status: 400 });
+  }
+
+  let finalPrompt = '';
+  if (prompt) {
+    if (prompt.length > 1500) {
+      return Response.json({ error: 'Prompt length exceeds 1500 characters limit' }, { status: 400 });
+    }
+    
+    if (detectJailbreak(prompt)) {
+      return Response.json({ error: 'Input validation failed: System instruction override or jailbreak detected.' }, { status: 400 });
+    }
+    
+    finalPrompt = sanitizePrompt(prompt);
+  }
+
+  // 2. Validate mode
+  if (mode !== 'Structured' && mode !== 'Chain of Thought') {
+    return Response.json({ error: 'Invalid generation mode' }, { status: 400 });
+  }
+
+  // 3. Validate modelName
+  if (!modelName || !validateModelName(modelName)) {
+    return Response.json({ error: 'Model not supported or invalid' }, { status: 400 });
+  }
+
   const isCoT = mode === 'Chain of Thought';
 
   const systemPrompt = isCoT
@@ -46,7 +80,7 @@ STRICT RULES:
 }`;
 
   const messageContent: any[] = [];
-  messageContent.push({ type: 'text', text: prompt || 'Convert this network diagram into a topology according to the rules.' });
+  messageContent.push({ type: 'text', text: finalPrompt || 'Convert this network diagram into a topology according to the rules.' });
   if (image) {
     // Extract base64 data ignoring the data URL prefix (e.g., data:image/png;base64,...)
     const base64Data = image.includes(',') ? image.split(',')[1] : image;

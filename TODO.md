@@ -5,21 +5,21 @@
 - [ ] **Export Topology** — download as PNG / SVG / JSON
 - [ ] **IP Mapping** — map LLM-generated IPs to actual EVE-NG Docker container IPs
 - [ ] **Rate limit protection** — handle Groq TPD limit gracefully (show countdown, fallback model)
-- [ ] **Input validation** — sanitize prompt before sending to LLM
+- [x] **Input validation** — sanitize prompt before sending to LLM
 
 ## 🚀 Features
 
 - [ ] **Multi-topology workspace** — tabs untuk switch antar topologi
 - [ ] **Rename from chat** — `rename FW1 Firewall-Core` command in prompt
-- [ ] **Traceroute** — re-enable with private IP restriction only
+- [x] **Traceroute** — re-enable with private IP restriction only
 - [x] **Push config to device** — via SSH, paste config langsung ke device
-- [ ] **Config diff** — compare generated config vs running config
-- [ ] **Topology templates** — pre-built templates (datacenter, campus, SOHO, ISP)
+- [x] **Config diff** — compare generated config vs running config
+- [x] **Topology templates** — pre-built templates (datacenter, campus, SOHO, ISP)
 - [ ] **Chain of Thought for topology** — show reasoning expandable in UI
 - [ ] **Dark/Light mode toggle**
 
 ## 🤖 AI / LLM
- [ ] **Multi-model support** — dropdown pilih model (Llama 3.3, Mixtral, Gemma)
+- [x] **Multi-model support** — dropdown pilih model (Llama 3.3, DeepSeek R1, Gemini 2.5, GPT-4o, DeepSeek V3)
 - [ ] **Fallback model** — auto switch ke model lain saat rate limit
 - [ ] **Token usage counter** — tampilkan estimasi token per request
 - [ ] **Prompt history** — simpan dan re-use prompt sebelumnya
@@ -31,7 +31,7 @@
 - [ ] **Authentication** — login page sebelum akses app
 - [ ] **Per-user topology storage** — isolasi data per user
 - [ ] **Audit log** — catat semua aksi (generate, deploy, SSH)
-- [ ] **Traceroute hardening** — restrict ke private IP only
+- [x] **Traceroute hardening** — restrict ke private IP only
 
 ## 🔧 Infrastructure
 
@@ -67,4 +67,11 @@
 - [x] Inline Config Editor inside Config Modal (Edit -> Done toggle with state persistence and copy/push sync)
 - [x] Premium Cisco-style JPG icons for topology nodes
 - [x] Minimal borderless layout for topology canvas (transparent node boxes, selection outlines removed)
-
+- [x] Multi-model selection dropdown (Llama 3.3, DeepSeek R1, Gemini 2.5, GPT-4o, DeepSeek V3)
+- [x] Multimodal Topology Generation (image/screenshot upload to auto-generate network nodes & links)
+- [x] Traceroute tool backend support with strict private IP address restrictions
+- [x] Topology templates (pre-built SOHO, Campus, Datacenter, ISP networks in design canvas)
+- [x] Config diff (compare generated config vs running config via LCS algorithm)
+- [x] Input validation and jailbreak detection for LLM prompts
+- [x] AI-driven Auto-Remediation suggestions for Attack Paths
+- [x] Real-time Traffic Telemetry Integration (Prometheus & Node Exporter)

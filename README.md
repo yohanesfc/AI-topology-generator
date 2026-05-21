@@ -16,9 +16,16 @@ A **Generative AI-powered** web application for designing network topologies fro
 - Set attacker origin and target destination via canvas context menu
 - Node styling and glow effects reflect risk severity (Critical, High, Medium, Low)
 - Identify vulnerabilities and potential lateral movement paths
+- **AI-driven Auto-Remediation:** Generates actionable mitigation strategies and ACL rules to break identified attack paths.
+
+### 📊 Real-time Traffic Telemetry
+- Integrates with Prometheus and Node Exporter to display real-time network traffic stats (Rx/Tx).
+- Inline traffic speed visualization on the topology links and nodes.
 
 ### 🧠 AI Topology Generation
 - Describe your network in plain text (supports Bahasa Indonesia & English)
+- **🖼️ Multimodal Diagram Upload** — Upload a hand-drawn sketch or screenshot of a network diagram (PNG, JPEG, WebP) to automatically recognize and recreate interactive topology canvas nodes and links.
+- **🎛️ Multi-Model Selector** — Switch on-the-fly between top-tier LLMs: **Llama 3.3 70B** & **DeepSeek R1** (via Groq), **Gemini 2.5 Flash/Pro** (via Google), **GPT-4o/Mini** (via OpenAI), and **DeepSeek V3/R1** (via DeepSeek API).
 - Two generation modes:
   - **📐 Structured Output** — fast, direct JSON generation
   - **🧠 Chain of Thought** — LLM reasons step-by-step before generating (more logical topology)
@@ -52,12 +59,21 @@ A **Generative AI-powered** web application for designing network topologies fro
 - Built on `ssh2` + WebSocket (port 7501)
 
 ### 🏓 Network Tools
-- **Ping** directly from node action panel
-- Output displayed inline
+- **Ping & Traceroute** directly from node action panel to test end-to-end network connectivity
+- **Security Hardened Input Validation** — strict regex controls and RFC 1918 private IP restriction (plus trusted Google/Cloudflare DNS public IPs) preventing unauthorized subnet/port scanning or SSRF leaks
+- Output displayed inline in a scrollable, terminal-style feed
 
 ### 💾 Save / Load Topology
 - Save multiple topologies server-side (JSON file)
 - Load and switch between saved projects
+
+### 📐 Pre-built Topology Templates
+- **Instant Workspace Bootstrap** — Get started instantly with pre-engineered reference architectures.
+- **SOHO Network** — Local office setup with an ISP cloud, gateway router, access point (WAP), central NAS storage server, and endpoint workstations.
+- **Enterprise Campus** — Hierarchical design including a secure border firewall, campus core router, Nexus core switch, isolated department switch blocks (HR, Finance), active directory server, and local printers.
+- **Cloud Data Center** — Spine-Leaf fabric utilizing active firewalls, redundant Spine Layer 3 switches, production HTTP web server clusters, backend database host tiers, and DC operations consoles.
+- **ISP Core Transit** — Service Provider transit model containing multiple BGP provider edges, label/traffic forwarding provider P-routers, enterprise customers, and ISP DNS aggregates.
+
 
 ### 🚀 Ansible Integration
 - Deploy topology to Ansible Semaphore
@@ -71,7 +87,7 @@ A **Generative AI-powered** web application for designing network topologies fro
 | Component | Technology |
 |---|---|
 | Framework | Next.js 16.2.6 (App Router) |
-| AI Engine | Llama 3.3 70B via Groq API |
+| AI Engine | Multi-Model Engine: Groq (Llama 3.3, DeepSeek R1), Google AI (Gemini 2.5 Flash/Pro), OpenAI (GPT-4o/Mini), DeepSeek API (V3, R1) |
 | Schema Validation | Zod |
 | Topology Canvas | React Flow (`@xyflow/react`) |
 | SSH Terminal | xterm.js + ssh2 + WebSocket |

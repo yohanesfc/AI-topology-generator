@@ -54,7 +54,9 @@ export default function SshTerminal({ host: initialHost, user = 'admin', onClose
         ...(mode === 'password' ? { password } : {}),
       });
 
-      const ws = new WebSocket(`ws://localhost:7501?${params}`);
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsHost = window.location.host;
+      const ws = new WebSocket(`${protocol}//${wsHost}/ssh-ws?${params}`);
       wsRef.current = ws;
 
       ws.onopen = () => terminal.write(`\x1b[32mConnecting to ${customUser}@${customHost}:${customPort} [${mode}]...\x1b[0m\r\n`);

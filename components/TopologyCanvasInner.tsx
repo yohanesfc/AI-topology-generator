@@ -90,6 +90,59 @@ function getMeta(type: string) {
   return TYPE_META[normalizeType(type)] ?? { color: '#64748b', icon: '/icons/standard host.jpg', tier: 3 };
 }
 
+function getTrafficLabel(fromDev: any, toDev: any, index: number, tick: number): string {
+  if (!fromDev || !toDev) return '';
+  
+  const fromMeta = getMeta(fromDev.type);
+  const toMeta = getMeta(toDev.type);
+  
+  const minTier = Math.min(fromMeta.tier, toMeta.tier);
+  const maxTier = Math.max(fromMeta.tier, toMeta.tier);
+  
+  let baseDown = 10;
+  let baseUp = 5;
+  
+  if (minTier <= 1) {
+    if (maxTier <= 1) {
+      baseDown = 250 + (index * 73) % 500;
+      baseUp = 200 + (index * 97) % 400;
+    } else if (maxTier <= 3) {
+      baseDown = 50 + (index * 31) % 150;
+      baseUp = 30 + (index * 47) % 100;
+    } else {
+      baseDown = 15 + (index * 13) % 35;
+      baseUp = 5 + (index * 7) % 15;
+    }
+  } else if (minTier <= 3) {
+    if (maxTier <= 3) {
+      baseDown = 20 + (index * 17) % 60;
+      baseUp = 15 + (index * 23) % 45;
+    } else {
+      baseDown = 5 + (index * 9) % 25;
+      baseUp = 1 + (index * 11) % 9;
+    }
+  } else {
+    baseDown = 1 + (index * 3) % 4;
+    baseUp = 0.5 + (index * 5) % 2;
+  }
+  
+  const variationFactor = 1 + 0.08 * Math.sin(tick * 0.5 + index);
+  const currentDown = baseDown * variationFactor;
+  const currentUp = baseUp * variationFactor;
+  
+  const formatSpeed = (speed: number) => {
+    if (speed >= 1000) {
+      return `${(speed / 1000).toFixed(1)}G`;
+    }
+    if (speed >= 1) {
+      return `${speed.toFixed(1)}M`;
+    }
+    return `${(speed * 1000).toFixed(0)}K`;
+  };
+  
+  return `▲ ${formatSpeed(currentUp)}  ▼ ${formatSpeed(currentDown)}`;
+}
+
 function computeLayout(devices: Topology['devices']) {
   const tiers = new Map<number, typeof devices>();
   devices.forEach(d => {
@@ -215,6 +268,32 @@ export default function TopologyCanvasInner({
   const [toolRunning, setToolRunning] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: any } | null>(null);
+  const [trafficTick, setTrafficTick] = useState(0);
+  const [liveTraffic, setLiveTraffic] = useState<Record<string, { up: string; down: string }>>({});
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTrafficTick(t => t + 1);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const fetchLiveTraffic = async () => {
+      try {
+        const res = await fetch('/api/traffic-telemetry');
+        const data = await res.json();
+        if (data && data.trafficData) {
+          setLiveTraffic(data.trafficData);
+        }
+      } catch (e) {
+        console.error('Failed to fetch real telemetry:', e);
+      }
+    };
+    fetchLiveTraffic();
+    const timer = setInterval(fetchLiveTraffic, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const runTool = useCallback(async (tool: string, host: string) => {
     setToolRunning(true);
@@ -393,6 +472,7 @@ export default function TopologyCanvasInner({
     });
 
     const deviceIds = new Set(data.devices.map(d => d.id));
+    const deviceMap = new Map(data.devices.map(d => [d.id, d]));
     const rfEdges = (data.connections ?? [])
       .filter(c => c.from && c.to && deviceIds.has(c.from) && deviceIds.has(c.to))
       .map((conn, i) => {
@@ -408,15 +488,40 @@ export default function TopologyCanvasInner({
           target = conn.from ?? '';
         }
 
+        const sourceDev = deviceMap.get(conn.from ?? '');
+        const targetDev = deviceMap.get(conn.to ?? '');
+
+        // Try keys in priority order:
+        // 1. "r1/eth0"  — router-id + interface (most specific)
+        // 2. "1.1.1.1/eth0" — loopback IP + interface
+        // 3. "r1"        — router aggregate total
+        // 4. undefined   — fall back to simulation
+        let liveStats: { up: string; down: string } | undefined;
+        if (conn.interface && sourceDev) {
+          liveStats =
+            liveTraffic[`${sourceDev.id}/${conn.interface}`] ??
+            liveTraffic[`${sourceDev.ipAddress}/${conn.interface}`] ??
+            liveTraffic[sourceDev.id] ??
+            undefined;
+        }
+
+        const isLive = !!liveStats;
+        const trafficLabel = liveStats
+          ? `▲ ${liveStats.up}  ▼ ${liveStats.down}`
+          : getTrafficLabel(sourceDev, targetDev, i, trafficTick);
+        const displayLabel = conn.interface
+          ? `${conn.interface} (${trafficLabel})${isLive ? ' 📡' : ''}`
+          : trafficLabel;
+
         if (isAttackEdge) {
           return {
             id: `e-${i}`,
             source,
             target,
-            label: conn.interface ?? '',
-            labelStyle: { fill: '#ef4444', fontSize: 9, fontWeight: 700 },
-            labelBgStyle: { fill: '#1a0000', fillOpacity: 0.9 },
-            labelBgPadding: [3, 5] as [number, number],
+            label: displayLabel,
+            labelStyle: { fill: '#f87171', fontSize: 8.5, fontWeight: 700, fontFamily: 'monospace' },
+            labelBgStyle: { fill: '#1a0d0d', fillOpacity: 0.95 },
+            labelBgPadding: [4, 6] as [number, number],
             labelBgBorderRadius: 4,
             animated: true,
             type: 'smoothstep',
@@ -434,10 +539,10 @@ export default function TopologyCanvasInner({
           id: `e-${i}`,
           source: conn.from ?? '',
           target: conn.to ?? '',
-          label: conn.interface ?? '',
-          labelStyle: { fill: '#94a3b8', fontSize: 9, fontWeight: 600 },
+          label: displayLabel,
+          labelStyle: { fill: simMode ? '#64748b' : '#38bdf8', fontSize: 8, fontWeight: 600, fontFamily: 'monospace' },
           labelBgStyle: { fill: '#0f172a', fillOpacity: 0.85 },
-          labelBgPadding: [3, 5] as [number, number],
+          labelBgPadding: [4, 6] as [number, number],
           labelBgBorderRadius: 4,
           animated: !simMode, // disable default animation in sim mode to keep red ones prominent
           type: 'smoothstep',
@@ -447,7 +552,7 @@ export default function TopologyCanvasInner({
       });
 
     return { nodes: rfNodes, edges: rfEdges };
-  }, [data, nodeNames, editingId, editValue, commitEdit, simMode, vulnerabilities, attackPath, attackPathEdges, attackerNodeId, targetNodeId]);
+  }, [data, nodeNames, editingId, editValue, commitEdit, simMode, vulnerabilities, attackPath, attackPathEdges, attackerNodeId, targetNodeId, trafficTick, liveTraffic]);
 
   return (
     <>
