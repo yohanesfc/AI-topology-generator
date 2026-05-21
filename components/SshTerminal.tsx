@@ -12,11 +12,22 @@ export default function SshTerminal({ host: initialHost, user = 'admin', onClose
   const wsRef = useRef<WebSocket | null>(null);
   const [authMode, setAuthMode] = useState<'choose' | 'connected'>('choose');
   const [password, setPassword] = useState('');
+  const [privateKey, setPrivateKey] = useState('');
+  const [keyError, setKeyError] = useState('');
   const [customUser, setCustomUser] = useState(user);
   const [customHost, setCustomHost] = useState(initialHost);
   const [customPort, setCustomPort] = useState('22');
 
-  const connect = (mode: 'password' | 'key') => {
+  // Validate PEM format
+  const validateKey = (key: string): string => {
+    const trimmed = key.trim();
+    if (!trimmed) return 'No key provided.';
+    if (!trimmed.startsWith('-----BEGIN')) return 'Key must start with -----BEGIN … -----';
+    if (!trimmed.includes('-----END')) return 'Key is incomplete — missing -----END … ----- footer.';
+    return '';
+  };
+
+  const connect = (mode: 'password' | 'key', keyContent?: string) => {
     setAuthMode('connected');
 
     async function init() {
@@ -52,6 +63,7 @@ export default function SshTerminal({ host: initialHost, user = 'admin', onClose
         user: customUser,
         mode,
         ...(mode === 'password' ? { password } : {}),
+        ...(mode === 'key' && keyContent ? { privateKey: keyContent } : {}),
       });
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -152,16 +164,68 @@ export default function SshTerminal({ host: initialHost, user = 'admin', onClose
 
               {/* Public Key */}
               <div className="p-4 bg-slate-800 rounded-xl border border-slate-600 hover:border-green-500 transition-colors space-y-3">
-                <p className="text-white font-semibold text-sm">🔐 Public Key</p>
-                <p className="text-slate-400 text-xs">
-                  Gunakan <code className="text-green-400">~/.ssh/id_rsa</code> dari server
-                </p>
+                <p className="text-white font-semibold text-sm">🔐 Private Key</p>
+                <p className="text-slate-400 text-xs">Paste your PEM private key, or pick a file.</p>
+
+                {/* File picker */}
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <span className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-500 rounded text-xs text-slate-300 group-hover:text-white transition-colors">
+                    📂 Choose file…
+                  </span>
+                  <span className="text-slate-500 text-[10px] truncate">
+                    {privateKey ? '✔ Key loaded' : 'No file chosen'}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pem,.key,.rsa,*"
+                    className="hidden"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = ev => {
+                        const content = (ev.target?.result as string) ?? '';
+                        setPrivateKey(content);
+                        setKeyError(validateKey(content));
+                      };
+                      reader.readAsText(file);
+                    }}
+                  />
+                </label>
+
+                {/* Paste area */}
+                <textarea
+                  rows={5}
+                  placeholder={`-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----`}
+                  className={`w-full bg-slate-900 border rounded px-3 py-2 text-xs text-green-400 font-mono focus:outline-none resize-none placeholder:text-slate-600 ${
+                    keyError ? 'border-red-500 focus:border-red-400' : 'border-slate-600 focus:border-green-500'
+                  }`}
+                  value={privateKey}
+                  onChange={e => {
+                    setPrivateKey(e.target.value);
+                    setKeyError(validateKey(e.target.value));
+                  }}
+                />
+
+                {/* Inline error */}
+                {keyError && (
+                  <p className="text-red-400 text-[10px] flex items-center gap-1">
+                    <span>⚠️</span> {keyError}
+                  </p>
+                )}
+
                 <p className="text-slate-500 text-[10px]">
-                  Pastikan public key sudah terdaftar di device target
+                  Ensure the corresponding public key is registered on the target device.
                 </p>
+
                 <button
-                  onClick={() => connect('key')}
-                  className="w-full py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-semibold transition-colors"
+                  onClick={() => {
+                    const err = validateKey(privateKey);
+                    if (err) { setKeyError(err); return; }
+                    connect('key', privateKey);
+                  }}
+                  disabled={!!validateKey(privateKey)}
+                  className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 rounded-lg text-sm font-semibold transition-colors"
                 >
                   Connect with Key
                 </button>
