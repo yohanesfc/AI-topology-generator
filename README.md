@@ -191,8 +191,8 @@ topologi ISP dengan cloud, IDS, IPS, 2 core router BGP,
 
 ## 📄 License
 
-MIT License — feel free to use, modify, and distribute.
+This project is licensed under the Apache 2.0 — see the [LICENSE](LICENSE) file for details.
 
 ---
 
-*Built with ❤️ on EVE-NG homelab running Oracle Cloud (Ubuntu 22.04, ARM64)*
+*Built with ❤️ on my homelab*
